@@ -1,50 +1,52 @@
 ﻿using System.Net;
-using System.Text.Json;
+using Microsoft.AspNetCore.Diagnostics;
+using LibraryManagement.Models;
 
 namespace LibraryManagement.Middleware
 {
-    public class GlobalExceptionHandler
+    public class GlobalExceptionHandler : IExceptionHandler
     {
-        private readonly RequestDelegate _next;
         private readonly ILogger<GlobalExceptionHandler> _logger;
 
-        public GlobalExceptionHandler(RequestDelegate next, ILogger<GlobalExceptionHandler> logger)
+        public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
         {
-            _next = next;
             _logger = logger;
         }
 
-        public async Task InvokeAsync(HttpContext context)
+        public async ValueTask<bool> TryHandleAsync(
+            HttpContext httpContext,
+            Exception exception,
+            CancellationToken cancellationToken)
         {
-            try
-            {
-                await _next(context);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.LogWarning(ex, "Unauthorized request.");
-                await WriteResponseAsync(context, HttpStatusCode.Unauthorized, ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An unhandled exception occurred.");
-                await WriteResponseAsync(context, HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
+            _logger.LogError(exception, "An error occurred while processing your request.");
 
-        private static async Task WriteResponseAsync(HttpContext context, HttpStatusCode statusCode, string message)
-        {
-            if (context.Response.HasStarted)
+            var errorResponse = new ErrorResponse
             {
-                return;
+                Message = exception.Message
+            };
+
+            switch (exception)
+            {
+                case BadHttpRequestException:
+                    errorResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+                    errorResponse.Title = exception.GetType().Name;
+                    break;
+
+                case UnauthorizedAccessException:
+                    errorResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    errorResponse.Title = exception.GetType().Name;
+                    break;
+
+                default:
+                    errorResponse.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    errorResponse.Title = "Internal Server Error";
+                    break;
             }
 
-            context.Response.Clear();
-            context.Response.StatusCode = (int)statusCode;
-            context.Response.ContentType = "application/json";
+            httpContext.Response.StatusCode = errorResponse.StatusCode;
+            await httpContext.Response.WriteAsJsonAsync(errorResponse, cancellationToken);
 
-            var response = JsonSerializer.Serialize(new { message });
-            await context.Response.WriteAsync(response);
+            return true;
         }
     }
 }

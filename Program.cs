@@ -14,6 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Swagger with JWT Bearer support
 builder.Services.AddSwaggerGen(c =>
@@ -90,7 +92,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 var app = builder.Build();
 
 // Global exception handler (must be first)
-app.UseMiddleware<GlobalExceptionHandler>();
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
