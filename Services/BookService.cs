@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using LibraryManagement.DTOs;
 using LibraryManagement.Models;
 using LibraryManagement.Repositories.Interfaces;
@@ -20,6 +20,11 @@ namespace LibraryManagement.Services
         public async Task<IEnumerable<Book>> GetAllBooksAsync()
         {
             return await _bookRepository.GetAllAsync();
+        }
+
+        public async Task<PagedResult<Book>> GetPagedBooksAsync(string searchTerm, int? year, int pageNumber, int pageSize)
+        {
+            return await _bookRepository.GetPagedAsync(searchTerm, year, pageNumber, pageSize);
         }
 
         public async Task<Book> GetByISBNAsync(string isbn)

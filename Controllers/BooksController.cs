@@ -1,4 +1,4 @@
-﻿using LibraryManagement.DTOs;
+using LibraryManagement.DTOs;
 using LibraryManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -9,21 +9,25 @@ namespace LibraryManagement.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class BookController : ControllerBase
+    public class BooksController : ControllerBase
     {
         private readonly IBookService _service;
 
-        public BookController(IBookService service)
+        public BooksController(IBookService service)
         {
             _service = service;
         }
 
         [HttpGet]
         [Authorize(Roles = "Admin,User")]
-        public async Task<IActionResult> GetAllBooks()
+        public async Task<IActionResult> GetAllBooks(
+            [FromQuery] string searchTerm = "",
+            [FromQuery] int? year = null,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var books = await _service.GetAllBooksAsync();
-            return Ok(books);
+            var pagedBooks = await _service.GetPagedBooksAsync(searchTerm, year, pageNumber, pageSize);
+            return Ok(pagedBooks);
         }
 
         [HttpGet("{isbn}")]

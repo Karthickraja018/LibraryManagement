@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using LibraryManagement.Models;
 using LibraryManagement.Repositories.Interfaces;
 using LibraryManagement.DTOs;
@@ -17,6 +17,34 @@ namespace LibraryManagement.Repositories
         public async Task<IEnumerable<Book>> GetAllAsync()
         {
             return await _context.Books.ToListAsync();
+        }
+
+        public async Task<PagedResult<Book>> GetPagedAsync(string searchTerm, int? year, int pageNumber, int pageSize)
+        {
+            var query = _context.Books.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(b => b.Title.Contains(searchTerm) || b.Author.Contains(searchTerm) || b.ISBN.Contains(searchTerm));
+            }
+
+            if (year.HasValue)
+            {
+                query = query.Where(b => b.PublicationYear == year.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((pageNumber - 1) * pageSize)
+                                   .Take(pageSize)
+                                   .ToListAsync();
+
+            return new PagedResult<Book>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<Book> GetByISBNAsync(string isbn)

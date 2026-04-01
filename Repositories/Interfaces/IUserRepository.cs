@@ -6,8 +6,6 @@ namespace LibraryManagement.Repositories.Interfaces
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User> GetByIdAsync(int id);
         Task AddAsync(User user);
-        Task UpdateAsync(User user);
-        Task DeleteAsync(User user);
         Task<User> GetByEmailAsync(string email);
     }
 }
