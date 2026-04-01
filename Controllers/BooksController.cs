@@ -66,7 +66,7 @@ namespace LibraryManagement.Controllers
             }
         }
 
-        [HttpDelete]
+        [HttpDelete("{isbn}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteBook(string isbn)
         {
